@@ -11,6 +11,7 @@ import configurationModule from "../../configuration.js";
 import { MetadataService } from "../metadata/metadata.service.js";
 import { FilesService } from "./files.service.js";
 import { GamesService } from "./games.service.js";
+import { GameType } from "./models/game-type.enum.js";
 
 // We need to mock configuration before importing the service
 vi.mock("../../configuration.js", async () => ({
@@ -659,6 +660,40 @@ describe("FilesService", () => {
       expect((service as any).shouldIncludeFile("ignore-demo.zip")).toBe(false);
       expect((service as any).shouldIncludeFile("valid-title.zip")).toBe(true);
       expect((service as any).shouldIncludeFile("valid-title.txt")).toBe(false);
+    });
+  });
+
+  describe("detectType", () => {
+    const detectType = (filePath: string) =>
+      (service as any).detectType(filePath) as Promise<GameType>;
+
+    it("detects LINUX_SETUP from a (L_S) filename tag", async () => {
+      await expect(detectType("/files/My Game (L_S).zip")).resolves.toBe(
+        GameType.LINUX_SETUP,
+      );
+    });
+
+    it("detects LINUX_PORTABLE from a (L_P) filename tag", async () => {
+      await expect(detectType("/files/My Game (L_P).zip")).resolves.toBe(
+        GameType.LINUX_PORTABLE,
+      );
+    });
+
+    it("does not classify a (L_SW) file as LINUX_SETUP", async () => {
+      await expect(detectType("/files/My Game (L_SW).zip")).resolves.toBe(
+        GameType.LINUX_SOFTWARE,
+      );
+    });
+
+    it("does not auto-classify a bare .sh file as LINUX_SETUP", async () => {
+      configuration.TESTING.MOCK_FILES = false;
+      try {
+        await expect(detectType("/files/My Game.sh")).resolves.toBe(
+          GameType.LINUX_PORTABLE,
+        );
+      } finally {
+        configuration.TESTING.MOCK_FILES = true;
+      }
     });
   });
 });

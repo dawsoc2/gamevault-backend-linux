@@ -659,6 +659,15 @@ export class FilesService implements OnApplicationBootstrap {
         return GameType.LINUX_PORTABLE;
       }
 
+      if (/\(L_S\)/.test(path)) {
+        this.logger.debug({
+          message: `Detected game type as ${GameType.LINUX_SETUP}.`,
+          reason: "(L_S) override in filename.",
+          game: { id: undefined, path },
+        });
+        return GameType.LINUX_SETUP;
+      }
+
       if (/\(W_SW\)/.test(path)) {
         this.logger.debug({
           message: `Detected game type as ${GameType.WINDOWS_SOFTWARE}.`,
